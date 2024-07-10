@@ -28,9 +28,11 @@ import com.example.server.presentation.viewmodels.ServerViewModel
 @Composable
 fun ServerScreen(viewModel: ServerViewModel = hiltViewModel()) {
     val isServerRunning by viewModel.isServerRunning.collectAsState()
+    val replayMode by viewModel.replayMode.collectAsState()
     val coroutineScope = rememberCoroutineScope()
 
     var touchDataList by remember { mutableStateOf(listOf<TouchData>()) }
+    var replayList by remember { mutableStateOf(listOf<TouchData>()) }
 
     LaunchedEffect(Unit) {
         viewModel.getAllTouchData().collect { data ->
@@ -38,9 +40,23 @@ fun ServerScreen(viewModel: ServerViewModel = hiltViewModel()) {
         }
     }
 
+    LaunchedEffect(replayMode) {
+        if (replayMode) {
+            viewModel.replayTouchData { touchData ->
+                replayList = replayList + touchData
+            }
+        }
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             drawTrack(touchDataList)
+        }
+
+        if (replayMode) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                drawTrack(replayList)
+            }
         }
 
         Column(
@@ -56,6 +72,12 @@ fun ServerScreen(viewModel: ServerViewModel = hiltViewModel()) {
             }
             Button(onClick = { viewModel.clearData() }) {
                 Text("Clear Data")
+            }
+            Button(onClick = {
+                replayList = listOf()
+                viewModel.toggleReplayMode()
+            }) {
+                Text("Replay Track")
             }
         }
     }

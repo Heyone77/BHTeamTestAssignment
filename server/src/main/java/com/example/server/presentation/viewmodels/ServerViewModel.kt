@@ -20,6 +20,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
@@ -35,6 +36,9 @@ class ServerViewModel @Inject constructor(
     var serverPort by mutableStateOf("8082")
 
     private var server = createServer()
+
+    private val _replayMode = MutableStateFlow(false)
+    val replayMode: StateFlow<Boolean> get() = _replayMode
 
     private fun createServer() = embeddedServer(CIO, port = serverPort.toInt()) {
         install(WebSockets)
@@ -99,5 +103,18 @@ class ServerViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             touchDataRepository.clearAllData()
         }
+    }
+
+    fun toggleReplayMode() {
+        _replayMode.value = !_replayMode.value
+    }
+
+    suspend fun replayTouchData(onTouchData: (TouchData) -> Unit) {
+        val touchDataList = touchDataRepository.getAllTouchData().first()
+        for (touchData in touchDataList) {
+            onTouchData(touchData)
+            kotlinx.coroutines.delay(100)
+        }
+        _replayMode.value = false
     }
 }
