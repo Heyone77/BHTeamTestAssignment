@@ -37,7 +37,12 @@ fun SwipeTrackingScreen(viewModel: ClientViewModel) {
                         for (change in event.changes) {
                             if (change.pressed) {
                                 coroutineScope.launch {
-                                    handleTouch(viewModel, change.position.x, change.position.y, change.pressure)
+                                    handleTouch(
+                                        viewModel,
+                                        change.position.x,
+                                        change.position.y,
+                                        change.pressure
+                                    )
                                 }
                             }
                         }
@@ -54,7 +59,12 @@ fun SwipeTrackingScreen(viewModel: ClientViewModel) {
 }
 
 private fun handleTouch(viewModel: ClientViewModel, x: Float, y: Float, pressure: Float) {
-    val touchData = TouchData(x, y, pressure)
+    val touchData = TouchData(
+        x = x,
+        y = y,
+        pressure = pressure,
+        timestamp = System.currentTimeMillis()
+    )
     println("Handling touch: $touchData")
     viewModel.updateTouchData(touchData)
 }

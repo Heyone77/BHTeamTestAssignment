@@ -50,10 +50,9 @@ class ServerViewModel @Inject constructor(
                         val receivedText = frame.readText()
                         println("Received: $receivedText")
 
-
-                        val touchData = Json.decodeFromString<TouchData>(receivedText)
+                        val swipeData = Json.decodeFromString<TouchData>(receivedText)
                         viewModelScope.launch {
-                            touchDataRepository.saveTouchData(touchData)
+                            touchDataRepository.saveTouchData(swipeData)
                         }
 
                         send(Frame.Text("Echo: $receivedText"))
