@@ -97,8 +97,11 @@ fun DrawScope.drawTrack(touchDataList: List<TouchData>) {
         for (i in 1 until touchDataList.size) {
             val start = touchDataList[i - 1]
             val end = touchDataList[i]
+
+            val alpha = end.pressure.coerceIn(0f, 1f)
+
             drawLine(
-                color = Color.Red.copy(alpha = end.pressure),
+                color = Color.Red.copy(alpha = alpha),
                 start = Offset(start.x, start.y),
                 end = Offset(end.x, end.y),
                 strokeWidth = 5f

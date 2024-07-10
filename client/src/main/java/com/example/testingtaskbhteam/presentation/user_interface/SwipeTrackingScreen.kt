@@ -59,14 +59,14 @@ fun SwipeTrackingScreen(viewModel: ClientViewModel) {
 }
 
 private fun handleTouch(viewModel: ClientViewModel, x: Float, y: Float, pressure: Float) {
+    val validPressure = pressure.coerceIn(0f, 1f)
+
     val touchData = TouchData(
         x = x,
         y = y,
-        pressure = pressure,
+        pressure = validPressure,
         timestamp = System.currentTimeMillis()
     )
-
-
     println("Handling touch: $touchData")
     viewModel.updateTouchData(touchData)
 }
