@@ -1,5 +1,6 @@
 package com.example.server.presentation.viewmodels
 
+
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -8,7 +9,6 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.ktor.server.application.install
 import io.ktor.server.cio.CIO
-import io.ktor.server.engine.ApplicationEngine
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.routing.routing
 import io.ktor.server.websocket.WebSockets
@@ -23,50 +23,42 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ServerViewModel @Inject constructor() : ViewModel() {
-    private val _isRunning = MutableStateFlow(false)
-    val isRunning: StateFlow<Boolean> get() = _isRunning
+    private val _isServerRunning = MutableStateFlow(false)
+    val isServerRunning: StateFlow<Boolean> get() = _isServerRunning
 
     var showConfigDialog by mutableStateOf(false)
-    var serverPort by mutableStateOf("8082")  // Новый порт
+    var serverPort by mutableStateOf("8082")
 
-    private var server: ApplicationEngine? = null
+    private var server = createServer()
 
-    fun toggleServer() {
-        viewModelScope.launch {
-            if (_isRunning.value) {
-                stopServer()
-                _isRunning.value = false
-            } else {
-                startServer()
-                _isRunning.value = true
-            }
-        }
-    }
-
-    private fun startServer() {
-        viewModelScope.launch(Dispatchers.IO) {
-            server = embeddedServer(CIO, port = serverPort.toInt()) {
-                install(WebSockets)
-                routing {
-                    webSocket("/") {
-                        for (frame in incoming) {
-                            frame as? Frame.Text ?: continue
-                            val receivedText = frame.readText()
-                            println("Received: $receivedText")
-                            outgoing.send(Frame.Text("Echo: $receivedText"))
-                        }
-                    }
+    private fun createServer() = embeddedServer(CIO, port = serverPort.toInt()) {
+        install(WebSockets)
+        routing {
+            webSocket("/track") {
+                for (frame in incoming) {
+                    frame as? Frame.Text ?: continue
+                    val receivedText = frame.readText()
+                    println("Received: $receivedText")
+                    send(Frame.Text("Echo: $receivedText"))
                 }
             }
-            server?.start(wait = false)
-            println("Server started on port $serverPort")
         }
     }
 
-    private fun stopServer() {
+    fun toggleServer() {
         viewModelScope.launch(Dispatchers.IO) {
-            server?.stop(1000, 1000)
-            println("Server stopped")
+            if (_isServerRunning.value) {
+                println("Stopping server...")
+                server.stop(1000, 10000)
+                _isServerRunning.value = false
+                println("Server stopped")
+            } else {
+                println("Starting server...")
+                server = createServer()
+                server.start(wait = false)
+                _isServerRunning.value = true
+                println("Server started on port $serverPort")
+            }
         }
     }
 
@@ -80,5 +72,9 @@ class ServerViewModel @Inject constructor() : ViewModel() {
 
     fun saveConfig() {
         closeConfigDialog()
+        if (_isServerRunning.value) {
+            toggleServer()
+            toggleServer()
+        }
     }
 }

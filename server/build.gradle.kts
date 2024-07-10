@@ -1,9 +1,11 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
+    id("org.jetbrains.kotlin.plugin.compose") version "2.0.0"
     id("kotlin-kapt")
     id("dagger.hilt.android.plugin")
-    id("org.jetbrains.kotlin.plugin.serialization")
+    kotlin("plugin.serialization") version "2.0.0"
+    id("com.google.devtools.ksp")
 }
 
 android {
@@ -53,18 +55,13 @@ android {
 }
 
 dependencies {
+    val room_version = "2.6.1"
+
     implementation(libs.androidx.room.runtime)
-    kapt(libs.androidx.room.compiler)
+    implementation("androidx.room:room-ktx:$room_version")
+    ksp(libs.androidx.room.compiler)
 
-    implementation(libs.ktor.server.core)
-    implementation(libs.ktor.server.cio)
-    implementation(libs.ktor.server.websockets)
-    implementation("org.jetbrains.kotlinx:atomicfu:0.20.1")
-
-    implementation (libs.hilt.android)
-    implementation(libs.androidx.runtime.livedata)
-    kapt (libs.hilt.compiler)
-    implementation(libs.androidx.hilt.navigation.compose)
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -74,6 +71,13 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.ktor.server.core)
+    implementation(libs.ktor.server.cio)
+    implementation(libs.ktor.server.websockets)
+    implementation("org.jetbrains.kotlinx:atomicfu:0.20.1")
+    implementation(libs.hilt.android)
+    kapt(libs.hilt.compiler)
+    implementation(libs.androidx.hilt.navigation.compose)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

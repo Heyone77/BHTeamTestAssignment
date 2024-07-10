@@ -2,6 +2,7 @@ package com.example.testingtaskbhteam.presentation.user_interface
 
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,20 +20,28 @@ import com.example.testingtaskbhteam.presentation.viewmodels.ClientViewModel
 fun ClientScreen(viewModel: ClientViewModel) {
     val isStarted by viewModel.isStarted.collectAsState()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        StartStopButton(isStarted = isStarted) { viewModel.toggleStartStop() }
-        Spacer(modifier = Modifier.height(16.dp))
-        ConfigButton { viewModel.openConfigDialog() }
-    }
+    Box(modifier = Modifier.fillMaxSize()) {
+        if (isStarted) {
+            SwipeTrackingScreen(viewModel)
+        }
 
-    if (viewModel.showConfigDialog) {
-        ConfigDialog(viewModel)
+        Column(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            StartStopButton(isStarted = isStarted) { viewModel.toggleStartStop() }
+            if (!isStarted) {
+                Spacer(modifier = Modifier.height(16.dp))
+                ConfigButton { viewModel.openConfigDialog() }
+            }
+        }
+
+        if (viewModel.showConfigDialog) {
+            ConfigDialog(viewModel)
+        }
     }
 }
 

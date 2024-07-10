@@ -21,7 +21,7 @@ class MainActivity : ComponentActivity() {
             TestingTaskBHTeamTheme {
                 Surface(color = MaterialTheme.colorScheme.background) {
                     val viewModel: ClientViewModel = hiltViewModel()
-                    ClientScreen(viewModel)
+                    ClientScreen(viewModel = viewModel)
                 }
             }
         }
