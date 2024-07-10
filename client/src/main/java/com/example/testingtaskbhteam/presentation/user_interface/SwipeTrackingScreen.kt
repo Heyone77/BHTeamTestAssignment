@@ -12,15 +12,14 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
+import com.example.testingtaskbhteam.data.TouchData
 import com.example.testingtaskbhteam.presentation.viewmodels.ClientViewModel
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun SwipeTrackingScreen(viewModel: ClientViewModel) {
     val coroutineScope = rememberCoroutineScope()
@@ -35,11 +34,11 @@ fun SwipeTrackingScreen(viewModel: ClientViewModel) {
                 awaitPointerEventScope {
                     while (true) {
                         val event = awaitPointerEvent()
-                        val position = event.changes.firstOrNull()?.position
-                        val pressure = event.changes.firstOrNull()?.pressure ?: 0f
-                        if (position != null) {
-                            coroutineScope.launch {
-                                handleTouch(viewModel, position.x, position.y, pressure)
+                        for (change in event.changes) {
+                            if (change.pressed) {
+                                coroutineScope.launch {
+                                    handleTouch(viewModel, change.position.x, change.position.y, change.pressure)
+                                }
                             }
                         }
                     }
@@ -55,11 +54,7 @@ fun SwipeTrackingScreen(viewModel: ClientViewModel) {
 }
 
 private fun handleTouch(viewModel: ClientViewModel, x: Float, y: Float, pressure: Float) {
-    val touchData = mapOf(
-        "x" to x,
-        "y" to y,
-        "pressure" to pressure
-    )
+    val touchData = TouchData(x, y, pressure)
     println("Handling touch: $touchData")
     viewModel.updateTouchData(touchData)
 }

@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.testingtaskbhteam.data.TouchData
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.websocket.webSocketSession
@@ -17,6 +18,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import javax.inject.Inject
 
 @HiltViewModel
@@ -32,7 +35,7 @@ class ClientViewModel @Inject constructor(
     var frequencyX by mutableStateOf("1")
 
     private var session: WebSocketSession? = null
-    private val touchData = MutableStateFlow<Map<String, Any>?>(null)
+    private val touchData = MutableStateFlow<TouchData?>(null)
 
     fun toggleStartStop() {
         viewModelScope.launch(Dispatchers.IO) {
@@ -69,15 +72,15 @@ class ClientViewModel @Inject constructor(
         }
     }
 
-    fun updateTouchData(newTouchData: Map<String, Any>) {
+    fun updateTouchData(newTouchData: TouchData) {
         touchData.value = newTouchData
     }
 
-    private fun sendTouchData(touchData: Map<String, Any>) {
+    private fun sendTouchData(touchData: TouchData) {
         viewModelScope.launch(Dispatchers.IO) {
             session?.let { wsSession ->
-                val data = touchData.toString() // Преобразуйте в JSON при необходимости
-                println("Sending data: $data") // Логирование отправляемых данных
+                val data = Json.encodeToString(touchData)
+                println("Sending data: $data")
                 wsSession.send(Frame.Text(data))
             }
         }

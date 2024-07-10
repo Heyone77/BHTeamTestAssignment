@@ -3,7 +3,7 @@ plugins {
     alias(libs.plugins.jetbrains.kotlin.android)
     id("kotlin-kapt")
     id("dagger.hilt.android.plugin")
-    id("org.jetbrains.kotlin.plugin.serialization")
+    kotlin("plugin.serialization") version "2.0.0"
     id("org.jetbrains.kotlin.plugin.compose") version "2.0.0"
 }
 
@@ -58,7 +58,8 @@ dependencies {
     implementation (libs.ktor.client.core)
     implementation (libs.ktor.client.cio)
     implementation (libs.ktor.client.websockets)
-    implementation("org.jetbrains.kotlinx:atomicfu:0.20.1")
+    implementation("org.jetbrains.kotlinx:atomicfu:0.25.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.1")
 
     implementation (libs.hilt.android)
     implementation(libs.androidx.runtime.livedata)

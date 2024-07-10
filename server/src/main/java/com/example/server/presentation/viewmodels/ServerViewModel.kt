@@ -1,11 +1,12 @@
 package com.example.server.presentation.viewmodels
 
-
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.server.TouchDataRepository
+import com.example.server.data.TouchData
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.ktor.server.application.install
 import io.ktor.server.cio.CIO
@@ -19,10 +20,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.Json
 import javax.inject.Inject
 
 @HiltViewModel
-class ServerViewModel @Inject constructor() : ViewModel() {
+class ServerViewModel @Inject constructor(
+    private val touchDataRepository: TouchDataRepository
+) : ViewModel() {
     private val _isServerRunning = MutableStateFlow(false)
     val isServerRunning: StateFlow<Boolean> get() = _isServerRunning
 
@@ -35,11 +40,24 @@ class ServerViewModel @Inject constructor() : ViewModel() {
         install(WebSockets)
         routing {
             webSocket("/track") {
-                for (frame in incoming) {
-                    frame as? Frame.Text ?: continue
-                    val receivedText = frame.readText()
-                    println("Received: $receivedText")
-                    send(Frame.Text("Echo: $receivedText"))
+                try {
+                    for (frame in incoming) {
+                        frame as? Frame.Text ?: continue
+                        val receivedText = frame.readText()
+                        println("Received: $receivedText")
+
+                        // Parse receivedText and save it to the database
+                        val touchData = Json.decodeFromString<TouchData>(receivedText)
+                        runBlocking {
+                            touchDataRepository.saveTouchData(touchData)
+                        }
+
+                        send(Frame.Text("Echo: $receivedText"))
+                    }
+                } catch (e: Exception) {
+                    println("Error in WebSocket session: ${e.message}")
+                } finally {
+                    println("WebSocket session closed")
                 }
             }
         }
@@ -73,8 +91,8 @@ class ServerViewModel @Inject constructor() : ViewModel() {
     fun saveConfig() {
         closeConfigDialog()
         if (_isServerRunning.value) {
-            toggleServer()
-            toggleServer()
+            toggleServer() // Stop the server if it's running
+            toggleServer() // Start the server with new configuration
         }
     }
 }
