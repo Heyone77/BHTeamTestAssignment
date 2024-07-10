@@ -75,8 +75,8 @@ class ServerViewModel @Inject constructor(
             } else {
                 println("Starting server...")
                 server = createServer()
-                server.start(wait = false)
                 clearData()
+                server.start(wait = false)
                 _isServerRunning.value = true
                 println("Server started on port $serverPort")
             }
@@ -109,9 +109,14 @@ class ServerViewModel @Inject constructor(
     suspend fun replayTouchData(onTouchData: (TouchData) -> Unit) {
         _touchDataList.value = emptyList()
         val touchDataList = touchDataRepository.getAllTouchData().first()
-        for (touchData in touchDataList) {
-            onTouchData(touchData)
-            kotlinx.coroutines.delay(100)
+        if (touchDataList.isNotEmpty()) {
+            var previousTimestamp = touchDataList[0].timestamp
+            for (touchData in touchDataList) {
+                val delayDuration = touchData.timestamp - previousTimestamp
+                kotlinx.coroutines.delay(delayDuration)
+                onTouchData(touchData)
+                previousTimestamp = touchData.timestamp
+            }
         }
         _replayMode.value = false
     }
