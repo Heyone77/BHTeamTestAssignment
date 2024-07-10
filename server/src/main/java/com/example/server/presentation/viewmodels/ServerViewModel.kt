@@ -67,8 +67,8 @@ class ServerViewModel @Inject constructor(
     }
 
     private fun simulateTouch(x: Float, y: Float) {
-        viewModelScope.launch(Dispatchers.IO) {
-            if (hasRoot) {
+        if (hasRoot) {
+            viewModelScope.launch(Dispatchers.IO) {
                 val command = "input tap $x $y"
                 println("Executing command: $command")
                 val success = executeRootCommand(command)
@@ -77,9 +77,9 @@ class ServerViewModel @Inject constructor(
                 } else {
                     println("Command execution failed")
                 }
-            } else {
-                println("No root access")
             }
+        } else {
+            println("No root access")
         }
     }
 
@@ -87,9 +87,6 @@ class ServerViewModel @Inject constructor(
         return withContext(Dispatchers.IO) {
             try {
                 val process = Runtime.getRuntime().exec(arrayOf("su", "-c", command))
-                val reader = BufferedReader(InputStreamReader(process.inputStream))
-                val output = reader.readLines()
-                output.forEach { line -> println("Root command output: $line") }
                 process.waitFor() == 0
             } catch (e: Exception) {
                 println("Root command execution failed: ${e.message}")
@@ -132,8 +129,10 @@ class ServerViewModel @Inject constructor(
                 println("Server stopped")
             } else {
                 println("Starting server...")
-                hasRoot = requestRootAccess()
-                println("Root check before starting server: $hasRoot")
+                if (!hasRoot) {
+                    hasRoot = requestRootAccess()
+                    println("Root check before starting server: $hasRoot")
+                }
                 server = createServer()
                 clearData()
                 server.start(wait = false)
