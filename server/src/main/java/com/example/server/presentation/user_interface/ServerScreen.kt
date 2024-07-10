@@ -25,7 +25,6 @@ import kotlinx.coroutines.launch
 @Composable
 fun ServerScreen(viewModel: ServerViewModel = hiltViewModel()) {
     val isServerRunning by viewModel.isServerRunning.collectAsState()
-    val replayMode by viewModel.replayMode.collectAsState()
     val touchDataList by viewModel.touchDataList.collectAsState()
     val coroutineScope = rememberCoroutineScope()
 

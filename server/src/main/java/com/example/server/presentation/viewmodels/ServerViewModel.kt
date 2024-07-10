@@ -32,7 +32,6 @@ class ServerViewModel @Inject constructor(
     val isServerRunning: StateFlow<Boolean> get() = _isServerRunning
 
     private val _replayMode = MutableStateFlow(false)
-    val replayMode: StateFlow<Boolean> get() = _replayMode
 
     private val _touchDataList = MutableStateFlow<List<TouchData>>(emptyList())
     val touchDataList: StateFlow<List<TouchData>> get() = _touchDataList
