@@ -21,7 +21,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import java.io.BufferedReader
+import java.io.InputStreamReader
 import javax.inject.Inject
 
 @HiltViewModel
@@ -39,7 +42,58 @@ class ServerViewModel @Inject constructor(
     var showConfigDialog by mutableStateOf(false)
     var serverPort by mutableStateOf("8082")
 
+    private var hasRoot = false
     private var server = createServer()
+
+    init {
+        viewModelScope.launch {
+            hasRoot = requestRootAccess()
+            println("Initial root check: $hasRoot")
+        }
+    }
+
+    private suspend fun requestRootAccess(): Boolean {
+        return withContext(Dispatchers.IO) {
+            try {
+                val process = Runtime.getRuntime().exec(arrayOf("su", "-c", "echo root access granted"))
+                val reader = BufferedReader(InputStreamReader(process.inputStream))
+                val output = reader.readLine()
+                process.waitFor() == 0 && output == "root access granted"
+            } catch (e: Exception) {
+                println("Root access request failed: ${e.message}")
+                false
+            }
+        }
+    }
+
+    private fun simulateTouch(x: Float, y: Float) {
+        if (hasRoot) {
+            viewModelScope.launch(Dispatchers.IO) {
+                val command = "input tap $x $y"
+                println("Executing command: $command")
+                val success = executeRootCommand(command)
+                if (success) {
+                    println("Command executed successfully")
+                } else {
+                    println("Command execution failed")
+                }
+            }
+        } else {
+            println("No root access")
+        }
+    }
+
+    private suspend fun executeRootCommand(command: String): Boolean {
+        return withContext(Dispatchers.IO) {
+            try {
+                val process = Runtime.getRuntime().exec(arrayOf("su", "-c", command))
+                process.waitFor() == 0
+            } catch (e: Exception) {
+                println("Root command execution failed: ${e.message}")
+                false
+            }
+        }
+    }
 
     private fun createServer() = embeddedServer(CIO, port = serverPort.toInt()) {
         install(WebSockets)
@@ -52,9 +106,11 @@ class ServerViewModel @Inject constructor(
 
                     try {
                         val swipeData = Json.decodeFromString<TouchData>(receivedText)
-                        viewModelScope.launch {
+                        viewModelScope.launch(Dispatchers.IO) {
                             touchDataRepository.saveTouchData(swipeData)
-                            _touchDataList.value = touchDataRepository.getAllTouchData().first()
+                            println("Saved to DB: $swipeData")
+                            simulateTouch(swipeData.x, swipeData.y)
+                            _touchDataList.value += swipeData
                         }
                     } catch (e: Exception) {
                         println("Error in WebSocket session: ${e.message}")
@@ -73,6 +129,10 @@ class ServerViewModel @Inject constructor(
                 println("Server stopped")
             } else {
                 println("Starting server...")
+                if (!hasRoot) {
+                    hasRoot = requestRootAccess()
+                    println("Root check before starting server: $hasRoot")
+                }
                 server = createServer()
                 clearData()
                 server.start(wait = false)

@@ -1,4 +1,4 @@
-package com.example.server.di
+package com.example.server
 
 import android.content.Context
 import androidx.room.Room
