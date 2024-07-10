@@ -17,10 +17,9 @@ import io.ktor.server.websocket.webSocket
 import io.ktor.websocket.Frame
 import io.ktor.websocket.readText
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
@@ -35,32 +34,25 @@ class ServerViewModel @Inject constructor(
     var showConfigDialog by mutableStateOf(false)
     var serverPort by mutableStateOf("8082")
 
-    val touchDataList: StateFlow<List<TouchData>> = touchDataRepository.getAllTouchData()
-        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
-
     private var server = createServer()
 
     private fun createServer() = embeddedServer(CIO, port = serverPort.toInt()) {
         install(WebSockets)
         routing {
             webSocket("/track") {
-                try {
-                    for (frame in incoming) {
-                        frame as? Frame.Text ?: continue
-                        val receivedText = frame.readText()
-                        println("Received: $receivedText")
+                for (frame in incoming) {
+                    frame as? Frame.Text ?: continue
+                    val receivedText = frame.readText()
+                    println("Received: $receivedText")
 
+                    try {
                         val swipeData = Json.decodeFromString<TouchData>(receivedText)
                         viewModelScope.launch {
                             touchDataRepository.saveTouchData(swipeData)
                         }
-
-                        send(Frame.Text("Echo: $receivedText"))
+                    } catch (e: Exception) {
+                        println("Error in WebSocket session: ${e.message}")
                     }
-                } catch (e: Exception) {
-                    println("Error in WebSocket session: ${e.message}")
-                } finally {
-                    println("WebSocket session closed")
                 }
             }
         }
@@ -94,13 +86,17 @@ class ServerViewModel @Inject constructor(
     fun saveConfig() {
         closeConfigDialog()
         if (_isServerRunning.value) {
-            toggleServer() // Stop the server if it's running
-            toggleServer() // Start the server with new configuration
+            toggleServer()
+            toggleServer()
         }
     }
 
+    fun getAllTouchData(): Flow<List<TouchData>> {
+        return touchDataRepository.getAllTouchData()
+    }
+
     fun clearData() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             touchDataRepository.clearAllData()
         }
     }

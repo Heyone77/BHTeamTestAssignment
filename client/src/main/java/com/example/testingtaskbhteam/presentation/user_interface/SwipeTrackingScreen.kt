@@ -65,6 +65,8 @@ private fun handleTouch(viewModel: ClientViewModel, x: Float, y: Float, pressure
         pressure = pressure,
         timestamp = System.currentTimeMillis()
     )
+
+
     println("Handling touch: $touchData")
     viewModel.updateTouchData(touchData)
 }

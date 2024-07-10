@@ -77,6 +77,7 @@ class ClientViewModel @Inject constructor(
     }
 
     private fun sendTouchData(touchData: TouchData) {
+
         viewModelScope.launch(Dispatchers.IO) {
             session?.let { wsSession ->
                 val data = Json.encodeToString(touchData)
