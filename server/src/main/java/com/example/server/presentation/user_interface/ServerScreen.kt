@@ -1,11 +1,16 @@
 package com.example.server.presentation.user_interface
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -36,25 +41,48 @@ fun ServerScreen(viewModel: ServerViewModel = hiltViewModel()) {
         Column(
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .padding(16.dp)
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Button(onClick = { viewModel.toggleServer() }) {
-                Text(text = if (isServerRunning) "Stop Server" else "Start Server")
+            Button(
+                onClick = { viewModel.toggleServer() },
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isServerRunning) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                    contentColor = Color.White
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(text = if (isServerRunning) "Остановить сервер" else "Запустить сервер")
             }
-            Button(onClick = { viewModel.openConfigDialog() }) {
-                Text("Configure Server")
+            Button(
+                onClick = { viewModel.openConfigDialog() },
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = Color.White
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Настроить сервер")
             }
-            Button(onClick = { viewModel.clearData() }) {
-                Text("Clear Data")
-            }
-            Button(onClick = {
-                coroutineScope.launch {
-                    viewModel.replayTouchData { touchData ->
-                        viewModel.updateReplayTrack(touchData)
+            Button(
+                onClick = {
+                    coroutineScope.launch {
+                        viewModel.replayTouchData { touchData ->
+                            viewModel.updateReplayTrack(touchData)
+                        }
                     }
-                }
-            }) {
-                Text("Replay Track")
+                },
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = Color.White
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Повторить трек")
             }
         }
     }
