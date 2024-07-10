@@ -1,8 +1,7 @@
-package com.example.server
+package com.example.server.data
 
-import com.example.server.data.TouchData
-import com.example.server.data.TouchDataDao
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
@@ -13,5 +12,15 @@ class TouchDataRepository @Inject constructor(
         withContext(Dispatchers.IO) {
             touchDataDao.insert(touchData)
         }
+    }
+
+    suspend fun clearAllData() {
+        withContext(Dispatchers.IO) {
+            touchDataDao.clearAll()
+        }
+    }
+
+    fun getAllTouchData(): Flow<List<TouchData>> {
+        return touchDataDao.getAll()
     }
 }
