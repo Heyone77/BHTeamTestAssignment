@@ -20,7 +20,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 
@@ -40,24 +39,20 @@ class ServerViewModel @Inject constructor(
         install(WebSockets)
         routing {
             webSocket("/track") {
-                try {
-                    for (frame in incoming) {
-                        frame as? Frame.Text ?: continue
-                        val receivedText = frame.readText()
-                        println("Received: $receivedText")
+                for (frame in incoming) {
+                    frame as? Frame.Text ?: continue
+                    val receivedText = frame.readText()
+                    println("Received: $receivedText")
 
-                        // Parse receivedText and save it to the database
-                        val touchData = Json.decodeFromString<TouchData>(receivedText)
-                        runBlocking {
-                            touchDataRepository.saveTouchData(touchData)
+                    try {
+                        val swipeData = Json.decodeFromString<TouchData>(receivedText)
+                        viewModelScope.launch {
+                            touchDataRepository.saveTouchData(swipeData)
                         }
-
                         send(Frame.Text("Echo: $receivedText"))
+                    } catch (e: Exception) {
+                        println("Error parsing data: ${e.message}")
                     }
-                } catch (e: Exception) {
-                    println("Error in WebSocket session: ${e.message}")
-                } finally {
-                    println("WebSocket session closed")
                 }
             }
         }
