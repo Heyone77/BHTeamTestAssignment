@@ -22,6 +22,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
+import java.io.BufferedReader
+import java.io.InputStreamReader
 import javax.inject.Inject
 
 @HiltViewModel
@@ -41,6 +43,32 @@ class ServerViewModel @Inject constructor(
 
     private var server = createServer()
 
+    private fun hasRootAccess(): Boolean {
+        return try {
+            val process = Runtime.getRuntime().exec("su")
+            val output = BufferedReader(InputStreamReader(process.inputStream)).readLine()
+            process.waitFor() == 0
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    private fun simulateTouch(x: Float, y: Float) {
+        if (hasRootAccess()) {
+            val command = "input tap $x $y"
+            executeRootCommand(command)
+        }
+    }
+
+    private fun executeRootCommand(command: String): Boolean {
+        return try {
+            val process = Runtime.getRuntime().exec(arrayOf("su", "-c", command))
+            process.waitFor() == 0
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     private fun createServer() = embeddedServer(CIO, port = serverPort.toInt()) {
         install(WebSockets)
         routing {
@@ -54,7 +82,8 @@ class ServerViewModel @Inject constructor(
                         val swipeData = Json.decodeFromString<TouchData>(receivedText)
                         viewModelScope.launch {
                             touchDataRepository.saveTouchData(swipeData)
-                            _touchDataList.value = touchDataRepository.getAllTouchData().first()
+//                            simulateTouch(swipeData.x, swipeData.y)
+                            _touchDataList.value += swipeData
                         }
                     } catch (e: Exception) {
                         println("Error in WebSocket session: ${e.message}")
