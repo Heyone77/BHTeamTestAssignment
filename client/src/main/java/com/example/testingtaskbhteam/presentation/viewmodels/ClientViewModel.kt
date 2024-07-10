@@ -64,7 +64,6 @@ class ClientViewModel @Inject constructor(
             while (_isStarted.value) {
                 touchData.value?.let { data ->
                     sendTouchData(data)
-                    // Сброс данных о касании после отправки
                     touchData.value = null
                 }
                 delay(1000L / frequencyX.toLong())

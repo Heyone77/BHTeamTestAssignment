@@ -8,13 +8,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -24,39 +20,17 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.server.data.TouchData
 import com.example.server.presentation.viewmodels.ServerViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun ServerScreen(viewModel: ServerViewModel = hiltViewModel()) {
     val isServerRunning by viewModel.isServerRunning.collectAsState()
-    val replayMode by viewModel.replayMode.collectAsState()
+    val touchDataList by viewModel.touchDataList.collectAsState()
     val coroutineScope = rememberCoroutineScope()
-
-    var touchDataList by remember { mutableStateOf(listOf<TouchData>()) }
-    var replayList by remember { mutableStateOf(listOf<TouchData>()) }
-
-    LaunchedEffect(Unit) {
-        viewModel.getAllTouchData().collect { data ->
-            touchDataList = data
-        }
-    }
-
-    LaunchedEffect(replayMode) {
-        if (replayMode) {
-            viewModel.replayTouchData { touchData ->
-                replayList = replayList + touchData
-            }
-        }
-    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             drawTrack(touchDataList)
-        }
-
-        if (replayMode) {
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                drawTrack(replayList)
-            }
         }
 
         Column(
@@ -74,10 +48,13 @@ fun ServerScreen(viewModel: ServerViewModel = hiltViewModel()) {
                 Text("Clear Data")
             }
             Button(onClick = {
-                replayList = listOf()
-                viewModel.toggleReplayMode()
+                coroutineScope.launch {
+                    viewModel.replayTouchData { touchData ->
+                        viewModel.updateReplayTrack(touchData)
+                    }
+                }
             }) {
-                Text("Replay Track")
+                Text("Полный трек")
             }
         }
     }

@@ -17,7 +17,6 @@ import io.ktor.server.websocket.webSocket
 import io.ktor.websocket.Frame
 import io.ktor.websocket.readText
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -32,13 +31,16 @@ class ServerViewModel @Inject constructor(
     private val _isServerRunning = MutableStateFlow(false)
     val isServerRunning: StateFlow<Boolean> get() = _isServerRunning
 
+    private val _replayMode = MutableStateFlow(false)
+    val replayMode: StateFlow<Boolean> get() = _replayMode
+
+    private val _touchDataList = MutableStateFlow<List<TouchData>>(emptyList())
+    val touchDataList: StateFlow<List<TouchData>> get() = _touchDataList
+
     var showConfigDialog by mutableStateOf(false)
     var serverPort by mutableStateOf("8082")
 
     private var server = createServer()
-
-    private val _replayMode = MutableStateFlow(false)
-    val replayMode: StateFlow<Boolean> get() = _replayMode
 
     private fun createServer() = embeddedServer(CIO, port = serverPort.toInt()) {
         install(WebSockets)
@@ -53,6 +55,7 @@ class ServerViewModel @Inject constructor(
                         val swipeData = Json.decodeFromString<TouchData>(receivedText)
                         viewModelScope.launch {
                             touchDataRepository.saveTouchData(swipeData)
+                            _touchDataList.value = touchDataRepository.getAllTouchData().first()
                         }
                     } catch (e: Exception) {
                         println("Error in WebSocket session: ${e.message}")
@@ -73,6 +76,7 @@ class ServerViewModel @Inject constructor(
                 println("Starting server...")
                 server = createServer()
                 server.start(wait = false)
+                clearData()
                 _isServerRunning.value = true
                 println("Server started on port $serverPort")
             }
@@ -95,26 +99,24 @@ class ServerViewModel @Inject constructor(
         }
     }
 
-    fun getAllTouchData(): Flow<List<TouchData>> {
-        return touchDataRepository.getAllTouchData()
-    }
-
     fun clearData() {
         viewModelScope.launch(Dispatchers.IO) {
             touchDataRepository.clearAllData()
+            _touchDataList.value = emptyList()
         }
     }
 
-    fun toggleReplayMode() {
-        _replayMode.value = !_replayMode.value
-    }
-
     suspend fun replayTouchData(onTouchData: (TouchData) -> Unit) {
+        _touchDataList.value = emptyList()
         val touchDataList = touchDataRepository.getAllTouchData().first()
         for (touchData in touchDataList) {
             onTouchData(touchData)
             kotlinx.coroutines.delay(100)
         }
         _replayMode.value = false
+    }
+
+    fun updateReplayTrack(touchData: TouchData) {
+        _touchDataList.value += touchData
     }
 }
